@@ -71,7 +71,6 @@ import { AccountService } from "../../core/services/account.service";
             (click)="openTransferModal()"
             class="rounded-xl text-xs sm:text-sm font-medium border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs flex items-center gap-1.5"
           >
-            <span nz-icon nzType="swap"></span>
             <span>Record Transfer</span>
           </button>
           <button
@@ -80,7 +79,6 @@ import { AccountService } from "../../core/services/account.service";
             (click)="openAddTxnModal()"
             class="rounded-xl text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 border-0 shadow-2xs flex items-center gap-1.5"
           >
-            <span nz-icon nzType="plus"></span>
             <span>Add Transaction</span>
           </button>
         </div>
