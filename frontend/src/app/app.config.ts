@@ -3,6 +3,7 @@ import { provideRouter } from "@angular/router";
 import { provideHttpClient, withInterceptors } from "@angular/common/http";
 import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
 import { en_US, provideNzI18n } from "ng-zorro-antd/i18n";
+import { provideNzNativeDateAdapter } from "ng-zorro-antd/core/time";
 import { provideNzIcons } from "ng-zorro-antd/icon";
 import {
   DashboardOutline,
@@ -39,12 +40,14 @@ import {
   TagOutline,
   AuditOutline,
   AppstoreOutline,
+  CoffeeOutline,
 } from "@ant-design/icons-angular/icons";
 
 import { routes } from "./app.routes";
 import { authInterceptor } from "./core/interceptors/auth.interceptor";
 
 const icons = [
+  CoffeeOutline,
   DashboardOutline,
   BankOutline,
   TransactionOutline,
@@ -88,5 +91,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideNzI18n(en_US),
     provideNzIcons(icons),
+    provideNzNativeDateAdapter(),
   ],
 };
