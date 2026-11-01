@@ -63,4 +63,6 @@ caddy/config/
 tmp/
 temp/
 scratch/
+.local/
+Library/
 

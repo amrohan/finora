@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Finora.Api/Finora.Api.csproj" />
+    <Project Path="src/Finora.Application/Finora.Application.csproj" />
+    <Project Path="src/Finora.Domain/Finora.Domain.csproj" />
+    <Project Path="src/Finora.Infrastructure/Finora.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Finora.Domain.Tests/Finora.Domain.Tests.csproj" />
+    <Project Path="tests/Finora.Integration.Tests/Finora.Integration.Tests.csproj" />
+  </Folder>
+</Solution>
