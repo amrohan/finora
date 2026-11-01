@@ -388,5 +388,101 @@ public class AccountsAndTransactionsTests : IClassFixture<TestWebApplicationFact
         // Balance should be restored
         Assert.Equal(balanceBefore, GetBalance());
     }
+
+    [Fact]
+    public async Task ListTransactions_SearchAndPagination_ShouldFilterAndPaginateCorrectly()
+    {
+        var (token, householdId) = await RegisterAdminAsync($"search_{Guid.NewGuid()}@p2test.com", "SearchFam");
+        var accountId = await CreateAccountAsync(token, householdId);
+
+        // Create 3 transactions with distinctive payees
+        for (int i = 1; i <= 3; i++)
+        {
+            var req = Authorized(HttpMethod.Post, "/api/v1/transactions", token, householdId);
+            req.Content = JsonContent.Create(new CreateTransactionRequest(
+                AccountId: accountId,
+                CategoryId: null,
+                TransactionType: TransactionType.Expense,
+                AmountPaise: 10_000 * i,
+                Date: DateOnly.FromDateTime(DateTime.UtcNow),
+                Payee: i == 1 ? "Starbucks Coffee" : (i == 2 ? "Netflix Subscription" : "Starbucks Airport")));
+            var resp = await _client.SendAsync(req);
+            resp.EnsureSuccessStatusCode();
+        }
+
+        // Search for "Starbucks"
+        var searchReq = Authorized(HttpMethod.Get, "/api/v1/transactions?search=Starbucks", token, householdId);
+        var searchResp = await _client.SendAsync(searchReq);
+        searchResp.EnsureSuccessStatusCode();
+        var searchBody = await searchResp.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal(2, searchBody.GetProperty("totalCount").GetInt32());
+        Assert.Equal(1, searchBody.GetProperty("page").GetInt32());
+        Assert.Equal(50, searchBody.GetProperty("pageSize").GetInt32());
+
+        var items = searchBody.GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(2, items.Count);
+        Assert.All(items, item => Assert.Contains("Starbucks", item.GetProperty("payee").GetString()));
+    }
+
+    [Fact]
+    public async Task BulkOperations_CategorizeAndDelete_ShouldWorkAtomically()
+    {
+        var (token, householdId) = await RegisterAdminAsync($"bulk_{Guid.NewGuid()}@p2test.com", "BulkFam");
+        var accountId = await CreateAccountAsync(token, householdId);
+
+        var categories = await (await _client.SendAsync(
+            Authorized(HttpMethod.Get, "/api/v1/categories", token, householdId)))
+            .Content.ReadFromJsonAsync<List<JsonElement>>();
+        var catId = Guid.Parse(categories!.First().GetProperty("id").GetString()!);
+
+        // Create 3 transactions
+        var txnIds = new List<Guid>();
+        for (int i = 1; i <= 3; i++)
+        {
+            var req = Authorized(HttpMethod.Post, "/api/v1/transactions", token, householdId);
+            req.Content = JsonContent.Create(new CreateTransactionRequest(
+                AccountId: accountId,
+                CategoryId: null,
+                TransactionType: TransactionType.Expense,
+                AmountPaise: 50_000,
+                Date: DateOnly.FromDateTime(DateTime.UtcNow),
+                Payee: $"Bulk Item {i}"));
+            var resp = await _client.SendAsync(req);
+            resp.EnsureSuccessStatusCode();
+            var body = await resp.Content.ReadFromJsonAsync<JsonElement>();
+            txnIds.Add(Guid.Parse(body.GetProperty("id").GetString()!));
+        }
+
+        // 1. Bulk Categorize all 3
+        var bulkCatReq = Authorized(HttpMethod.Post, "/api/v1/transactions/bulk-categorize", token, householdId);
+        bulkCatReq.Content = JsonContent.Create(new BulkCategorizeRequest(txnIds, catId));
+        var bulkCatResp = await _client.SendAsync(bulkCatReq);
+        bulkCatResp.EnsureSuccessStatusCode();
+        var catResult = await bulkCatResp.Content.ReadFromJsonAsync<BulkActionResultResponse>(JsonOpts);
+        Assert.Equal(3, catResult!.AffectedCount);
+
+        // 2. Bulk Visibility to Private
+        var bulkVisReq = Authorized(HttpMethod.Post, "/api/v1/transactions/bulk-visibility", token, householdId);
+        bulkVisReq.Content = JsonContent.Create(new BulkVisibilityRequest(txnIds, VisibilityLevel.Private));
+        var bulkVisResp = await _client.SendAsync(bulkVisReq);
+        bulkVisResp.EnsureSuccessStatusCode();
+        var visResult = await bulkVisResp.Content.ReadFromJsonAsync<BulkActionResultResponse>(JsonOpts);
+        Assert.Equal(3, visResult!.AffectedCount);
+
+        // 3. Bulk Delete 2 of them
+        var bulkDelReq = Authorized(HttpMethod.Post, "/api/v1/transactions/bulk-delete", token, householdId);
+        bulkDelReq.Content = JsonContent.Create(new BulkDeleteRequest(txnIds.Take(2).ToList()));
+        var bulkDelResp = await _client.SendAsync(bulkDelReq);
+        bulkDelResp.EnsureSuccessStatusCode();
+        var delResult = await bulkDelResp.Content.ReadFromJsonAsync<BulkActionResultResponse>(JsonOpts);
+        Assert.Equal(2, delResult!.AffectedCount);
+
+        // Verify remaining count is 1
+        var listReq = Authorized(HttpMethod.Get, "/api/v1/transactions", token, householdId);
+        var listResp = await _client.SendAsync(listReq);
+        var listBody = await listResp.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(1, listBody.GetProperty("totalCount").GetInt32());
+    }
 }
 

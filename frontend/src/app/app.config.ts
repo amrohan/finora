@@ -46,6 +46,7 @@ import {
   FileTextOutline,
   ImportOutline,
   InboxOutline,
+  SearchOutline,
 } from "@ant-design/icons-angular/icons";
 
 import { routes } from "./app.routes";
@@ -92,6 +93,7 @@ const icons = [
   FileTextOutline,
   ImportOutline,
   InboxOutline,
+  SearchOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

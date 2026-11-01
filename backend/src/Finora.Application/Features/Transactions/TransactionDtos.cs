@@ -73,4 +73,19 @@ public record ExecuteImportResponse(
     int SkippedCount,
     long NewAccountBalancePaise);
 
+public record BulkCategorizeRequest(
+    IReadOnlyList<Guid> TransactionIds,
+    Guid? CategoryId);
+
+public record BulkDeleteRequest(
+    IReadOnlyList<Guid> TransactionIds);
+
+public record BulkVisibilityRequest(
+    IReadOnlyList<Guid> TransactionIds,
+    VisibilityLevel Visibility);
+
+public record BulkActionResultResponse(
+    int AffectedCount);
+
+
 

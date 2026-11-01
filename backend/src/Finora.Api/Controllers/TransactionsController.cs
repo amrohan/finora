@@ -45,6 +45,7 @@ public class TransactionsController : ControllerBase
         [FromQuery] Guid? accountId = null,
         [FromQuery] Guid? categoryId = null,
         [FromQuery] TransactionType? type = null,
+        [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
         var (userId, _) = GetContext();
@@ -71,6 +72,16 @@ public class TransactionsController : ControllerBase
         if (categoryId.HasValue) query = query.Where(t => t.CategoryId == categoryId.Value);
         if (type.HasValue) query = query.Where(t => t.TransactionType == type.Value);
 
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim().ToLower();
+            query = query.Where(t =>
+                (t.Payee != null && t.Payee.ToLower().Contains(term)) ||
+                (t.Notes != null && t.Notes.ToLower().Contains(term)) ||
+                (t.Category != null && t.Category.Name.ToLower().Contains(term)) ||
+                (t.Account != null && t.Account.Name.ToLower().Contains(term)));
+        }
+
         var total = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderByDescending(t => t.Date)
@@ -81,7 +92,7 @@ public class TransactionsController : ControllerBase
 
         var dtos = items.Select(MapToDto).ToList();
 
-        return Ok(new PagedResult<TransactionDto>(dtos, total, page, pageSize));
+        return Ok(new PagedResult<TransactionDto>(dtos, page, pageSize, total));
     }
 
     /// <summary>
@@ -587,6 +598,149 @@ public class TransactionsController : ControllerBase
             await tx.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Assigns or unassigns category to multiple transactions in bulk.
+    /// </summary>
+    [HttpPost("bulk-categorize")]
+    public async Task<IActionResult> BulkCategorize(
+        [FromBody] BulkCategorizeRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (userId, householdId) = GetContext();
+        if (userId == null || householdId == null) return Unauthorized();
+
+        if (request.TransactionIds == null || request.TransactionIds.Count == 0)
+            return BadRequest(Problem("No transactions specified.", statusCode: 400));
+
+        if (request.CategoryId.HasValue)
+        {
+            var catExists = await _dbContext.Categories
+                .AnyAsync(c => c.Id == request.CategoryId.Value, cancellationToken);
+            if (!catExists)
+                return UnprocessableEntity(Problem("Category not found in this household.", statusCode: 422));
+        }
+
+        var transactions = await _dbContext.Transactions
+            .Where(t => request.TransactionIds.Contains(t.Id) &&
+                        (t.Visibility == VisibilityLevel.Household || t.CreatedByUserId == userId.Value))
+            .ToListAsync(cancellationToken);
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var t in transactions)
+        {
+            t.CategoryId = request.CategoryId;
+            t.UpdatedAt = now;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogAsync(
+            householdId.Value, userId.Value,
+            "BulkCategorized", "Transaction", $"{transactions.Count} transactions",
+            newValues: new { request.CategoryId, Count = transactions.Count });
+
+        return Ok(new BulkActionResultResponse(transactions.Count));
+    }
+
+    /// <summary>
+    /// Deletes multiple transactions in bulk and atomically reverses account balances.
+    /// </summary>
+    [HttpPost("bulk-delete")]
+    public async Task<IActionResult> BulkDelete(
+        [FromBody] BulkDeleteRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (userId, householdId) = GetContext();
+        if (userId == null || householdId == null) return Unauthorized();
+
+        if (request.TransactionIds == null || request.TransactionIds.Count == 0)
+            return BadRequest(Problem("No transactions specified.", statusCode: 400));
+
+        var transactions = await _dbContext.Transactions
+            .Include(t => t.Account)
+            .Include(t => t.Splits)
+            .Where(t => request.TransactionIds.Contains(t.Id) &&
+                        (t.Visibility == VisibilityLevel.Household || t.CreatedByUserId == userId.Value))
+            .ToListAsync(cancellationToken);
+
+        if (transactions.Count == 0)
+            return Ok(new BulkActionResultResponse(0));
+
+        await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            foreach (var t in transactions)
+            {
+                if (t.Account != null)
+                {
+                    if (t.TransactionType == TransactionType.Income)
+                        t.Account.CurrentBalancePaise -= t.AmountPaise;
+                    else if (t.TransactionType == TransactionType.Expense)
+                        t.Account.CurrentBalancePaise += t.AmountPaise;
+
+                    t.Account.UpdatedAt = DateTimeOffset.UtcNow;
+                }
+
+                if (t.Splits.Count > 0)
+                {
+                    _dbContext.TransactionSplits.RemoveRange(t.Splits);
+                }
+            }
+
+            _dbContext.Transactions.RemoveRange(transactions);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            await _auditService.LogAsync(
+                householdId.Value, userId.Value,
+                "BulkDeleted", "Transaction", $"{transactions.Count} transactions",
+                newValues: new { Count = transactions.Count });
+
+            return Ok(new BulkActionResultResponse(transactions.Count));
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates visibility (Household vs Private) for multiple transactions in bulk.
+    /// </summary>
+    [HttpPost("bulk-visibility")]
+    public async Task<IActionResult> BulkVisibility(
+        [FromBody] BulkVisibilityRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (userId, householdId) = GetContext();
+        if (userId == null || householdId == null) return Unauthorized();
+
+        if (request.TransactionIds == null || request.TransactionIds.Count == 0)
+            return BadRequest(Problem("No transactions specified.", statusCode: 400));
+
+        var transactions = await _dbContext.Transactions
+            .Where(t => request.TransactionIds.Contains(t.Id) &&
+                        (t.Visibility == VisibilityLevel.Household || t.CreatedByUserId == userId.Value))
+            .ToListAsync(cancellationToken);
+
+        var now = DateTimeOffset.UtcNow;
+        foreach (var t in transactions)
+        {
+            t.Visibility = request.Visibility;
+            t.UpdatedAt = now;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        await _auditService.LogAsync(
+            householdId.Value, userId.Value,
+            "BulkVisibilityUpdated", "Transaction", $"{transactions.Count} transactions",
+            newValues: new { Visibility = request.Visibility.ToString(), Count = transactions.Count });
+
+        return Ok(new BulkActionResultResponse(transactions.Count));
     }
 
     // ------------------------------------------------------------------

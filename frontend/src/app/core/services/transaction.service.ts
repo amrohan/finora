@@ -118,6 +118,7 @@ export class TransactionService {
     accountId?: string;
     categoryId?: string;
     type?: number;
+    search?: string;
   } = {}): Observable<PagedResult<Transaction>> {
     this.loading.set(true);
     let httpParams = new HttpParams();
@@ -128,6 +129,7 @@ export class TransactionService {
     if (params.accountId) httpParams = httpParams.set('accountId', params.accountId);
     if (params.categoryId) httpParams = httpParams.set('categoryId', params.categoryId);
     if (params.type) httpParams = httpParams.set('type', params.type);
+    if (params.search) httpParams = httpParams.set('search', params.search.trim());
 
     return this.http.get<PagedResult<Transaction>>(this.baseUrl, { params: httpParams }).pipe(
       tap({
@@ -179,6 +181,26 @@ export class TransactionService {
 
   executeImport(payload: ExecuteImportRequest): Observable<ExecuteImportResponse> {
     return this.http.post<ExecuteImportResponse>(`${this.baseUrl}/import/execute`, payload);
+  }
+
+  bulkCategorize(transactionIds: string[], categoryId: string | null): Observable<{ affectedCount: number }> {
+    return this.http.post<{ affectedCount: number }>(`${this.baseUrl}/bulk-categorize`, {
+      transactionIds,
+      categoryId
+    });
+  }
+
+  bulkDelete(transactionIds: string[]): Observable<{ affectedCount: number }> {
+    return this.http.post<{ affectedCount: number }>(`${this.baseUrl}/bulk-delete`, {
+      transactionIds
+    });
+  }
+
+  bulkVisibility(transactionIds: string[], visibility: number): Observable<{ affectedCount: number }> {
+    return this.http.post<{ affectedCount: number }>(`${this.baseUrl}/bulk-visibility`, {
+      transactionIds,
+      visibility
+    });
   }
 }
 
