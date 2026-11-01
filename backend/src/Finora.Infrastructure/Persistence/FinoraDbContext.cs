@@ -33,6 +33,11 @@ public class FinoraDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
     public DbSet<Transfer> Transfers => Set<Transfer>();
     public DbSet<AccessGrant> AccessGrants => Set<AccessGrant>();
 
+    // Phase 3 — Planning & Commitments
+    public DbSet<Budget> Budgets => Set<Budget>();
+    public DbSet<RecurringBill> RecurringBills => Set<RecurringBill>();
+    public DbSet<BillOccurrence> BillOccurrences => Set<BillOccurrence>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -162,6 +167,22 @@ public class FinoraDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
             .HasQueryFilter(ag => _currentUserService == null ||
                                   _currentUserService.HouseholdId == null ||
                                   ag.HouseholdId == _currentUserService.HouseholdId);
+
+        // Phase 3 tenant filters
+        builder.Entity<Budget>()
+            .HasQueryFilter(b => _currentUserService == null ||
+                                 _currentUserService.HouseholdId == null ||
+                                 b.HouseholdId == _currentUserService.HouseholdId);
+
+        builder.Entity<RecurringBill>()
+            .HasQueryFilter(rb => _currentUserService == null ||
+                                  _currentUserService.HouseholdId == null ||
+                                  rb.HouseholdId == _currentUserService.HouseholdId);
+
+        builder.Entity<BillOccurrence>()
+            .HasQueryFilter(bo => _currentUserService == null ||
+                                  _currentUserService.HouseholdId == null ||
+                                  bo.HouseholdId == _currentUserService.HouseholdId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

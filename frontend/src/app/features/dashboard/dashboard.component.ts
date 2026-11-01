@@ -10,6 +10,7 @@ import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
 import { HouseholdService } from '../../core/services/household.service';
 import { AccountService } from '../../core/services/account.service';
 import { TransactionService, Transaction } from '../../core/services/transaction.service';
+import { BillService, BillOccurrence } from '../../core/services/bill.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -137,6 +138,43 @@ import { TransactionService, Transaction } from '../../core/services/transaction
               </div>
             }
           </nz-card>
+
+          <!-- Upcoming Bills & Commitments (Criterion #3 & #5) -->
+          <nz-card [nzTitle]="'Upcoming Bills'" [nzExtra]="viewBillsTpl" class="rounded-xl border border-slate-200/80 shadow-xs">
+            <ng-template #viewBillsTpl>
+              <a routerLink="/bills" class="text-xs font-medium text-emerald-600 hover:text-emerald-500">View All →</a>
+            </ng-template>
+
+            @if (upcomingBills().length === 0) {
+              <nz-empty nzNotFoundImage="simple" nzNotFoundContent="No upcoming bills due.">
+                <a routerLink="/bills" nz-button nzType="default" class="mt-2 rounded-lg text-xs">
+                  Schedule Bill
+                </a>
+              </nz-empty>
+            } @else {
+              <div class="space-y-2.5">
+                @for (bill of upcomingBills(); track bill.id) {
+                  <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-medium text-slate-800 text-xs">{{ bill.billName }}</span>
+                        @if (bill.status === 3) {
+                          <nz-tag nzColor="error" class="rounded text-[10px] m-0">Overdue</nz-tag>
+                        }
+                      </div>
+                      <span class="text-[11px] text-slate-400 font-mono">Due {{ bill.dueDate }}</span>
+                    </div>
+                    <div class="text-right">
+                      <span class="font-mono font-bold text-slate-900 text-xs block">
+                        {{ bill.amountPaise | inrCurrency }}
+                      </span>
+                      <a routerLink="/bills" class="text-[11px] text-emerald-600 hover:underline">Pay →</a>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </nz-card>
         </div>
 
         <!-- Accounts Overview in Sidebar -->
@@ -168,6 +206,43 @@ import { TransactionService, Transaction } from '../../core/services/transaction
               </div>
             }
           </nz-card>
+
+          <!-- Upcoming Bills & Commitments (Criterion #3 & #5) -->
+          <nz-card [nzTitle]="'Upcoming Bills'" [nzExtra]="viewBillsTpl" class="rounded-xl border border-slate-200/80 shadow-xs">
+            <ng-template #viewBillsTpl>
+              <a routerLink="/bills" class="text-xs font-medium text-emerald-600 hover:text-emerald-500">View All →</a>
+            </ng-template>
+
+            @if (upcomingBills().length === 0) {
+              <nz-empty nzNotFoundImage="simple" nzNotFoundContent="No upcoming bills due.">
+                <a routerLink="/bills" nz-button nzType="default" class="mt-2 rounded-lg text-xs">
+                  Schedule Bill
+                </a>
+              </nz-empty>
+            } @else {
+              <div class="space-y-2.5">
+                @for (bill of upcomingBills(); track bill.id) {
+                  <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 transition-colors">
+                    <div>
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-medium text-slate-800 text-xs">{{ bill.billName }}</span>
+                        @if (bill.status === 3) {
+                          <nz-tag nzColor="error" class="rounded text-[10px] m-0">Overdue</nz-tag>
+                        }
+                      </div>
+                      <span class="text-[11px] text-slate-400 font-mono">Due {{ bill.dueDate }}</span>
+                    </div>
+                    <div class="text-right">
+                      <span class="font-mono font-bold text-slate-900 text-xs block">
+                        {{ bill.amountPaise | inrCurrency }}
+                      </span>
+                      <a routerLink="/bills" class="text-[11px] text-emerald-600 hover:underline">Pay →</a>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </nz-card>
         </div>
       </div>
     </div>
@@ -177,8 +252,10 @@ export class DashboardComponent implements OnInit {
   householdService = inject(HouseholdService);
   accountService = inject(AccountService);
   transactionService = inject(TransactionService);
+  billService = inject(BillService);
 
   recentTransactions = signal<Transaction[]>([]);
+  upcomingBills = signal<BillOccurrence[]>([]);
 
   monthlyIncomePaise = computed(() => {
     return this.transactionService.transactions()
@@ -200,6 +277,10 @@ export class DashboardComponent implements OnInit {
     this.accountService.loadAccounts().subscribe();
     this.transactionService.loadTransactions({ pageSize: 5 }).subscribe(res => {
       this.recentTransactions.set(res.items);
+    });
+    this.billService.loadOccurrences().subscribe(res => {
+      // Pick first 4 upcoming or overdue
+      this.upcomingBills.set(res.filter(o => o.status !== 2).slice(0, 4));
     });
   }
 }

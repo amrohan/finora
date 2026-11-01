@@ -40,3 +40,19 @@ public enum TransactionType
     Transfer = 3
 }
 
+public enum BillFrequency
+{
+    Weekly = 1,
+    Monthly = 2,
+    Quarterly = 3,
+    Yearly = 4
+}
+
+public enum BillOccurrenceStatus
+{
+    Upcoming = 1,
+    Paid = 2,
+    Overdue = 3,
+    Skipped = 4
+}
+

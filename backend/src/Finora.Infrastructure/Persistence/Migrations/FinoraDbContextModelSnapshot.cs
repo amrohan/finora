@@ -197,6 +197,93 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.ToTable("audit_logs", (string)null);
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.BillOccurrence", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("BillId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("bill_id");
+
+                    b.Property<DateOnly>("DueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("due_date");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid?>("TransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transaction_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BillId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("HouseholdId", "DueDate", "Status");
+
+                    b.ToTable("bill_occurrences", (string)null);
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.Budget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AllocatedAmountPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("allocated_amount_paise");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<int>("Month")
+                        .HasColumnType("integer")
+                        .HasColumnName("month");
+
+                    b.Property<bool>("RolloverEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("rollover_enabled");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer")
+                        .HasColumnName("year");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("HouseholdId", "CategoryId", "Year", "Month")
+                        .IsUnique();
+
+                    b.ToTable("budgets", (string)null);
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
@@ -388,6 +475,60 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.HasIndex("HouseholdId", "Email");
 
                     b.ToTable("invitations", (string)null);
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<bool>("AutoRecord")
+                        .HasColumnType("boolean")
+                        .HasColumnName("auto_record");
+
+                    b.Property<Guid?>("CategoryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("category_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("ExpectedAmountPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("expected_amount_paise");
+
+                    b.Property<int>("Frequency")
+                        .HasColumnType("integer")
+                        .HasColumnName("frequency");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<DateOnly>("NextDueDate")
+                        .HasColumnType("date")
+                        .HasColumnName("next_due_date");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("HouseholdId", "IsActive");
+
+                    b.ToTable("recurring_bills", (string)null);
                 });
 
             modelBuilder.Entity("Finora.Domain.Entities.Transaction", b =>
@@ -833,6 +974,51 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.Navigation("Household");
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.BillOccurrence", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.RecurringBill", "RecurringBill")
+                        .WithMany("Occurrences")
+                        .HasForeignKey("BillId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Household");
+
+                    b.Navigation("RecurringBill");
+
+                    b.Navigation("Transaction");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.Budget", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Household");
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.Category", b =>
                 {
                     b.HasOne("Finora.Domain.Entities.Household", "Household")
@@ -869,6 +1055,24 @@ namespace Finora.Infrastructure.Persistence.Migrations
                         .HasForeignKey("HouseholdId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Household");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.Category", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
 
                     b.Navigation("Household");
                 });
@@ -1021,6 +1225,11 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.Navigation("Invitations");
 
                     b.Navigation("Members");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
+                {
+                    b.Navigation("Occurrences");
                 });
 
             modelBuilder.Entity("Finora.Domain.Entities.Transaction", b =>
