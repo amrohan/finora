@@ -22,6 +22,7 @@ import { NzSwitchModule } from "ng-zorro-antd/switch";
 import { NzIconModule } from "ng-zorro-antd/icon";
 import { NzMessageService } from "ng-zorro-antd/message";
 import { InrCurrencyPipe } from "../../shared/pipes/inr-currency.pipe";
+import { TransactionImportModalComponent } from "./transaction-import-modal.component";
 import {
   TransactionService,
   Transaction,
@@ -49,6 +50,7 @@ import { AccountService } from "../../core/services/account.service";
     NzSwitchModule,
     NzIconModule,
     InrCurrencyPipe,
+    TransactionImportModalComponent,
   ],
   template: `
     <div class="space-y-6 max-w-7xl mx-auto">
@@ -65,6 +67,15 @@ import { AccountService } from "../../core/services/account.service";
           </p>
         </div>
         <div class="flex items-center gap-2">
+          <button
+            nz-button
+            nzType="default"
+            (click)="isImportModalVisible = true"
+            class="rounded-xl text-xs sm:text-sm font-medium border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs flex items-center gap-1.5"
+          >
+            <span nz-icon nzType="upload"></span>
+            <span>Import Excel / CSV</span>
+          </button>
           <button
             nz-button
             nzType="default"
@@ -632,6 +643,12 @@ import { AccountService } from "../../core/services/account.service";
           </form>
         </ng-container>
       </nz-modal>
+
+      <!-- Import Excel / CSV Modal -->
+      <app-transaction-import-modal
+        [(isVisible)]="isImportModalVisible"
+        (importCompleted)="loadData()">
+      </app-transaction-import-modal>
     </div>
   `,
 })
@@ -647,6 +664,7 @@ export class TransactionsComponent implements OnInit {
   selectedAccountFilter: string | null = null;
   selectedCategoryFilter: string | null = null;
 
+  isImportModalVisible = false;
   isAddModalVisible = false;
   isTransferModalVisible = false;
   isSubmitting = false;

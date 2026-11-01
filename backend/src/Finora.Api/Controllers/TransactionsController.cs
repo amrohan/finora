@@ -17,15 +17,18 @@ public class TransactionsController : ControllerBase
     private readonly FinoraDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAuditService _auditService;
+    private readonly ITransactionImportService _importService;
 
     public TransactionsController(
         FinoraDbContext dbContext,
         ICurrentUserService currentUserService,
-        IAuditService auditService)
+        IAuditService auditService,
+        ITransactionImportService importService)
     {
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _auditService = auditService;
+        _importService = importService;
     }
 
     /// <summary>
@@ -419,6 +422,165 @@ public class TransactionsController : ControllerBase
                 oldValues: new { transaction.TransactionType, transaction.AmountPaise, transaction.Date });
 
             return NoContent();
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Parses an uploaded Excel (.xlsx) or CSV file and returns the detected columns,
+    /// a preview of rows, and all extracted data rows for client-side column mapping.
+    /// </summary>
+    [HttpPost("import/parse")]
+    public async Task<IActionResult> ParseImportFile(
+        IFormFile? file,
+        CancellationToken cancellationToken)
+    {
+        var (userId, householdId) = GetContext();
+        if (userId == null || householdId == null) return Unauthorized();
+
+        if (file == null || file.Length == 0)
+            return BadRequest(Problem("Please select an Excel (.xlsx) or CSV file to upload.", statusCode: 400));
+
+        if (file.Length > 10 * 1024 * 1024)
+            return BadRequest(Problem("File size exceeds 10 MB limit.", statusCode: 400));
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (ext is not (".xlsx" or ".csv" or ".tsv" or ".txt"))
+            return BadRequest(Problem("Only .xlsx, .csv, and .tsv formats are supported.", statusCode: 400));
+
+        await using var stream = file.OpenReadStream();
+        var parsed = await _importService.ParseFileAsync(stream, file.FileName, cancellationToken);
+        return Ok(parsed);
+    }
+
+    /// <summary>
+    /// Executes atomic batch import of mapped transactions.
+    /// Updates account balances atomically, applies privacy visibility,
+    /// links verified categories, and skips duplicates if requested.
+    /// </summary>
+    [HttpPost("import/execute")]
+    public async Task<IActionResult> ExecuteImport(
+        [FromBody] ExecuteImportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var (userId, householdId) = GetContext();
+        if (userId == null || householdId == null) return Unauthorized();
+
+        if (request.Transactions == null || request.Transactions.Count == 0)
+            return BadRequest(Problem("No transactions provided to import.", statusCode: 400));
+
+        var account = await _dbContext.Accounts
+            .FirstOrDefaultAsync(a => a.Id == request.AccountId, cancellationToken);
+        if (account == null)
+            return UnprocessableEntity(Problem("Target account not found in this household.", statusCode: 422));
+
+        var validCategoryIds = await _dbContext.Categories
+            .Select(c => c.Id)
+            .ToHashSetAsync(cancellationToken);
+
+        var existingTxns = new HashSet<string>();
+        if (request.SkipDuplicates)
+        {
+            var dates = request.Transactions.Select(t => t.Date).ToList();
+            var minDate = dates.Min();
+            var maxDate = dates.Max();
+
+            var existingInDb = await _dbContext.Transactions
+                .Where(t => t.AccountId == request.AccountId && t.Date >= minDate && t.Date <= maxDate)
+                .Select(t => new { t.Date, t.AmountPaise, t.TransactionType, Payee = t.Payee ?? "" })
+                .ToListAsync(cancellationToken);
+
+            foreach (var e in existingInDb)
+            {
+                existingTxns.Add($"{e.Date:yyyy-MM-dd}|{e.AmountPaise}|{(int)e.TransactionType}|{e.Payee.Trim().ToLowerInvariant()}");
+            }
+        }
+
+        var transactionsToAdd = new List<Transaction>();
+        var skippedCount = 0;
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var item in request.Transactions)
+        {
+            if (item.AmountPaise <= 0 || item.TransactionType == TransactionType.Transfer)
+            {
+                skippedCount++;
+                continue;
+            }
+
+            var payeeClean = item.Payee?.Trim() ?? string.Empty;
+            var dedupeKey = $"{item.Date:yyyy-MM-dd}|{item.AmountPaise}|{(int)item.TransactionType}|{payeeClean.ToLowerInvariant()}";
+
+            if (request.SkipDuplicates && (existingTxns.Contains(dedupeKey) || transactionsToAdd.Any(t =>
+                t.Date == item.Date &&
+                t.AmountPaise == item.AmountPaise &&
+                t.TransactionType == item.TransactionType &&
+                string.Equals(t.Payee ?? "", payeeClean, StringComparison.OrdinalIgnoreCase))))
+            {
+                skippedCount++;
+                continue;
+            }
+
+            Guid? verifiedCategoryId = null;
+            if (item.CategoryId.HasValue && validCategoryIds.Contains(item.CategoryId.Value))
+            {
+                verifiedCategoryId = item.CategoryId.Value;
+            }
+
+            var txn = new Transaction
+            {
+                Id = Guid.NewGuid(),
+                HouseholdId = householdId.Value,
+                AccountId = request.AccountId,
+                CategoryId = verifiedCategoryId,
+                CreatedByUserId = userId.Value,
+                TransactionType = item.TransactionType,
+                AmountPaise = item.AmountPaise,
+                Date = item.Date,
+                Payee = string.IsNullOrWhiteSpace(item.Payee) ? null : item.Payee.Trim(),
+                Notes = string.IsNullOrWhiteSpace(item.Notes) ? null : item.Notes.Trim(),
+                Visibility = item.Visibility,
+                IsSplit = false,
+                CreatedAt = now,
+                UpdatedAt = now
+            };
+
+            transactionsToAdd.Add(txn);
+        }
+
+        if (transactionsToAdd.Count == 0)
+        {
+            return Ok(new ExecuteImportResponse(0, skippedCount, account.CurrentBalancePaise));
+        }
+
+        await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            _dbContext.Transactions.AddRange(transactionsToAdd);
+
+            foreach (var txn in transactionsToAdd)
+            {
+                if (txn.TransactionType == TransactionType.Income)
+                    account.CurrentBalancePaise += txn.AmountPaise;
+                else if (txn.TransactionType == TransactionType.Expense)
+                    account.CurrentBalancePaise -= txn.AmountPaise;
+            }
+
+            account.UpdatedAt = now;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+
+            await _auditService.LogAsync(
+                householdId.Value, userId.Value,
+                "TransactionsImported", "Account", account.Id.ToString(),
+                newValues: new { Count = transactionsToAdd.Count, Skipped = skippedCount, AccountName = account.Name });
+
+            return Ok(new ExecuteImportResponse(transactionsToAdd.Count, skippedCount, account.CurrentBalancePaise));
         }
         catch
         {

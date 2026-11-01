@@ -41,6 +41,11 @@ import {
   AuditOutline,
   AppstoreOutline,
   CoffeeOutline,
+  UploadOutline,
+  FileExcelOutline,
+  FileTextOutline,
+  ImportOutline,
+  InboxOutline,
 } from "@ant-design/icons-angular/icons";
 
 import { routes } from "./app.routes";
@@ -82,6 +87,11 @@ const icons = [
   TagOutline,
   AuditOutline,
   AppstoreOutline,
+  UploadOutline,
+  FileExcelOutline,
+  FileTextOutline,
+  ImportOutline,
+  InboxOutline,
 ];
 
 export const appConfig: ApplicationConfig = {

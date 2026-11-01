@@ -67,6 +67,36 @@ export interface RecordTransferRequest {
   notes?: string;
 }
 
+export interface ParsedFileResult {
+  fileName: string;
+  totalRows: number;
+  columns: string[];
+  previewRows: Record<string, string>[];
+  allRows: Record<string, string>[];
+}
+
+export interface ImportTransactionItem {
+  date: string;
+  payee?: string;
+  amountPaise: number;
+  transactionType: number;
+  categoryId?: string;
+  notes?: string;
+  visibility?: number;
+}
+
+export interface ExecuteImportRequest {
+  accountId: string;
+  transactions: ImportTransactionItem[];
+  skipDuplicates: boolean;
+}
+
+export interface ExecuteImportResponse {
+  importedCount: number;
+  skippedCount: number;
+  newAccountBalancePaise: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -139,6 +169,16 @@ export class TransactionService {
     return this.http.get<Category[]>(this.categoriesUrl, { params }).pipe(
       tap(cats => this.categories.set(cats))
     );
+  }
+
+  parseImportFile(file: File): Observable<ParsedFileResult> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<ParsedFileResult>(`${this.baseUrl}/import/parse`, formData);
+  }
+
+  executeImport(payload: ExecuteImportRequest): Observable<ExecuteImportResponse> {
+    return this.http.post<ExecuteImportResponse>(`${this.baseUrl}/import/execute`, payload);
   }
 }
 

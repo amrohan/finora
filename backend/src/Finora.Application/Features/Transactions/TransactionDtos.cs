@@ -47,3 +47,30 @@ public record RecordTransferRequest(
     DateOnly Date,
     string? Notes = null);
 
+public record ParsedFileDto(
+    string FileName,
+    int TotalRows,
+    IReadOnlyList<string> Columns,
+    IReadOnlyList<IReadOnlyDictionary<string, string>> PreviewRows,
+    IReadOnlyList<IReadOnlyDictionary<string, string>> AllRows);
+
+public record ImportTransactionItemDto(
+    DateOnly Date,
+    string? Payee,
+    long AmountPaise,
+    TransactionType TransactionType,
+    Guid? CategoryId = null,
+    string? Notes = null,
+    VisibilityLevel Visibility = VisibilityLevel.Household);
+
+public record ExecuteImportRequest(
+    Guid AccountId,
+    IReadOnlyList<ImportTransactionItemDto> Transactions,
+    bool SkipDuplicates = true);
+
+public record ExecuteImportResponse(
+    int ImportedCount,
+    int SkippedCount,
+    long NewAccountBalancePaise);
+
+

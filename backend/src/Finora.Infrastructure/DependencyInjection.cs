@@ -1,5 +1,6 @@
 using System.Text;
 using Finora.Application.Common;
+using Finora.Application.Features.Transactions;
 using Finora.Infrastructure.Identity;
 using Finora.Infrastructure.Persistence;
 using Finora.Infrastructure.Services;
@@ -85,6 +86,7 @@ public static class DependencyInjection
         // 4. Services
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<IAuditService, AuditService>();
+        services.AddScoped<ITransactionImportService, TransactionImportService>();
 
         return services;
     }
