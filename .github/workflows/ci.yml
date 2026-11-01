@@ -1,0 +1,80 @@
+name: Finora CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-test:
+    name: Backend Tests & Quality
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore NuGet Packages
+        run: dotnet restore backend/Finora.slnx
+
+      - name: Build Backend (Release)
+        run: dotnet build backend/Finora.slnx --no-restore -c Release
+
+      - name: Execute Unit & Integration Tests
+        run: dotnet test backend/Finora.slnx --no-build -c Release --logger "console;verbosity=normal"
+
+  frontend-build:
+    name: Frontend PWA Build & Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Angular SPA & PWA Production Bundle
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify PWA Manifest and Service Worker Assets
+        run: |
+          test -f frontend/dist/finora/browser/index.html
+          test -f frontend/dist/finora/browser/manifest.webmanifest
+          test -f frontend/dist/finora/browser/sw.js
+          test -f frontend/dist/finora/browser/icons/icon-192.svg
+          test -f frontend/dist/finora/browser/icons/icon-512.svg
+          echo "PWA assets verified successfully."
+
+  docker-validate:
+    name: Container & Infrastructure Validation
+    needs: [backend-test, frontend-build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose Configuration
+        run: docker compose config -q
+        env:
+          DATABASE_CONNECTION_STRING: "Host=localhost;Port=5432;Database=finora;Username=postgres;Password=test"
+          JWT_SECRET: "abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ12"
+          INITIAL_SETUP_TOKEN: "dev_initial_setup_token_finora_2026"
+
