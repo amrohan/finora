@@ -38,6 +38,12 @@ public class FinoraDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
     public DbSet<RecurringBill> RecurringBills => Set<RecurringBill>();
     public DbSet<BillOccurrence> BillOccurrences => Set<BillOccurrence>();
 
+    // Phase 4 — Wealth, Loans & Savings Goals
+    public DbSet<Loan> Loans => Set<Loan>();
+    public DbSet<LoanPayment> LoanPayments => Set<LoanPayment>();
+    public DbSet<SavingsGoal> SavingsGoals => Set<SavingsGoal>();
+    public DbSet<GoalContribution> GoalContributions => Set<GoalContribution>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -183,6 +189,27 @@ public class FinoraDbContext : IdentityDbContext<ApplicationUser, IdentityRole<G
             .HasQueryFilter(bo => _currentUserService == null ||
                                   _currentUserService.HouseholdId == null ||
                                   bo.HouseholdId == _currentUserService.HouseholdId);
+
+        // Phase 4 tenant filters
+        builder.Entity<Loan>()
+            .HasQueryFilter(l => _currentUserService == null ||
+                                 _currentUserService.HouseholdId == null ||
+                                 l.HouseholdId == _currentUserService.HouseholdId);
+
+        builder.Entity<LoanPayment>()
+            .HasQueryFilter(lp => _currentUserService == null ||
+                                  _currentUserService.HouseholdId == null ||
+                                  lp.HouseholdId == _currentUserService.HouseholdId);
+
+        builder.Entity<SavingsGoal>()
+            .HasQueryFilter(sg => _currentUserService == null ||
+                                  _currentUserService.HouseholdId == null ||
+                                  sg.HouseholdId == _currentUserService.HouseholdId);
+
+        builder.Entity<GoalContribution>()
+            .HasQueryFilter(gc => _currentUserService == null ||
+                                  _currentUserService.HouseholdId == null ||
+                                  gc.HouseholdId == _currentUserService.HouseholdId);
     }
 
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

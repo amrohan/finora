@@ -341,6 +341,44 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.GoalContribution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<long>("AmountPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("amount_paise");
+
+                    b.Property<DateOnly>("ContributionDate")
+                        .HasColumnType("date")
+                        .HasColumnName("contribution_date");
+
+                    b.Property<Guid>("GoalId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("goal_id");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<Guid?>("TransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transaction_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GoalId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("HouseholdId", "GoalId", "ContributionDate");
+
+                    b.ToTable("goal_contributions", (string)null);
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.Household", b =>
                 {
                     b.Property<Guid>("Id")
@@ -477,6 +515,107 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.ToTable("invitations", (string)null);
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.Loan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AccountId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("account_id");
+
+                    b.Property<decimal>("AnnualInterestRate")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("annual_interest_rate");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("CurrentPrincipalPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("current_principal_paise");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<long>("MonthlyEmiPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("monthly_emi_paise");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("OriginalPrincipalPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("original_principal_paise");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date")
+                        .HasColumnName("start_date");
+
+                    b.Property<int>("TenureMonths")
+                        .HasColumnType("integer")
+                        .HasColumnName("tenure_months");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("HouseholdId", "AccountId");
+
+                    b.ToTable("loans", (string)null);
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.LoanPayment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<long>("InterestPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("interest_paise");
+
+                    b.Property<Guid>("LoanId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("loan_id");
+
+                    b.Property<DateOnly>("PaymentDate")
+                        .HasColumnType("date")
+                        .HasColumnName("payment_date");
+
+                    b.Property<long>("PrincipalPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("principal_paise");
+
+                    b.Property<Guid>("TransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transaction_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LoanId");
+
+                    b.HasIndex("TransactionId");
+
+                    b.HasIndex("HouseholdId", "LoanId", "PaymentDate");
+
+                    b.ToTable("loan_payments", (string)null);
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
                 {
                     b.Property<Guid>("Id")
@@ -529,6 +668,54 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.HasIndex("HouseholdId", "IsActive");
 
                     b.ToTable("recurring_bills", (string)null);
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.SavingsGoal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<long>("CurrentAmountPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("current_amount_paise");
+
+                    b.Property<Guid>("HouseholdId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("household_id");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_completed");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("TargetAmountPaise")
+                        .HasColumnType("bigint")
+                        .HasColumnName("target_amount_paise");
+
+                    b.Property<DateOnly?>("TargetDate")
+                        .HasColumnType("date")
+                        .HasColumnName("target_date");
+
+                    b.Property<int>("Visibility")
+                        .HasColumnType("integer")
+                        .HasColumnName("visibility");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HouseholdId", "IsCompleted");
+
+                    b.ToTable("savings_goals", (string)null);
                 });
 
             modelBuilder.Entity("Finora.Domain.Entities.Transaction", b =>
@@ -1037,6 +1224,32 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.Navigation("ParentCategory");
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.GoalContribution", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.SavingsGoal", "Goal")
+                        .WithMany("Contributions")
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Goal");
+
+                    b.Navigation("Household");
+
+                    b.Navigation("Transaction");
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.HouseholdMember", b =>
                 {
                     b.HasOne("Finora.Domain.Entities.Household", "Household")
@@ -1059,6 +1272,52 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.Navigation("Household");
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.Loan", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("Household");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.LoanPayment", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Loan", "Loan")
+                        .WithMany("Payments")
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Finora.Domain.Entities.Transaction", "Transaction")
+                        .WithMany()
+                        .HasForeignKey("TransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Household");
+
+                    b.Navigation("Loan");
+
+                    b.Navigation("Transaction");
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
                 {
                     b.HasOne("Finora.Domain.Entities.Category", "Category")
@@ -1073,6 +1332,17 @@ namespace Finora.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+
+                    b.Navigation("Household");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.SavingsGoal", b =>
+                {
+                    b.HasOne("Finora.Domain.Entities.Household", "Household")
+                        .WithMany()
+                        .HasForeignKey("HouseholdId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Household");
                 });
@@ -1227,9 +1497,19 @@ namespace Finora.Infrastructure.Persistence.Migrations
                     b.Navigation("Members");
                 });
 
+            modelBuilder.Entity("Finora.Domain.Entities.Loan", b =>
+                {
+                    b.Navigation("Payments");
+                });
+
             modelBuilder.Entity("Finora.Domain.Entities.RecurringBill", b =>
                 {
                     b.Navigation("Occurrences");
+                });
+
+            modelBuilder.Entity("Finora.Domain.Entities.SavingsGoal", b =>
+                {
+                    b.Navigation("Contributions");
                 });
 
             modelBuilder.Entity("Finora.Domain.Entities.Transaction", b =>

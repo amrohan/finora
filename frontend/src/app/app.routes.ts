@@ -43,6 +43,18 @@ export const routes: Routes = [
       {
         path: 'bills',
         loadComponent: () => import('./features/bills/bills.component').then(m => m.BillsComponent)
+      },
+      {
+        path: 'debts',
+        loadComponent: () => import('./features/loans/loans.component').then(m => m.LoansComponent)
+      },
+      {
+        path: 'loans',
+        loadComponent: () => import('./features/loans/loans.component').then(m => m.LoansComponent)
+      },
+      {
+        path: 'goals',
+        loadComponent: () => import('./features/goals/goals.component').then(m => m.GoalsComponent)
       }
     ]
   },
