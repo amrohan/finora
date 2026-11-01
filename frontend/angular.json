@@ -16,9 +16,6 @@
             "outputPath": "dist/finora",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
@@ -58,6 +55,9 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "proxyConfig": "proxy.conf.json"
+          },
           "configurations": {
             "production": {
               "buildTarget": "finora:build:production"
@@ -72,4 +72,3 @@
     }
   }
 }
-

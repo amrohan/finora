@@ -1,18 +1,92 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
-import { provideRouter } from '@angular/router';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { en_US, provideNzI18n } from 'ng-zorro-antd/i18n';
-import { routes } from './app.routes';
-import { authInterceptor } from './core/interceptors/auth.interceptor';
+import { ApplicationConfig } from "@angular/core";
+import { provideRouter } from "@angular/router";
+import { provideHttpClient, withInterceptors } from "@angular/common/http";
+import { provideAnimationsAsync } from "@angular/platform-browser/animations/async";
+import { en_US, provideNzI18n } from "ng-zorro-antd/i18n";
+import { provideNzIcons } from "ng-zorro-antd/icon";
+import {
+  DashboardOutline,
+  BankOutline,
+  TransactionOutline,
+  PieChartOutline,
+  CalendarOutline,
+  FallOutline,
+  RiseOutline,
+  TrophyOutline,
+  SettingOutline,
+  EyeOutline,
+  EyeInvisibleOutline,
+  SwapOutline,
+  PlusOutline,
+  DeleteOutline,
+  DollarOutline,
+  WalletOutline,
+  CreditCardOutline,
+  ArrowUpOutline,
+  ArrowDownOutline,
+  SafetyCertificateOutline,
+  LockOutline,
+  UserOutline,
+  LogoutOutline,
+  FilterOutline,
+  DownloadOutline,
+  CheckCircleOutline,
+  ExclamationCircleOutline,
+  MenuOutline,
+  CloseOutline,
+  AlertOutline,
+  CheckOutline,
+  TagOutline,
+  AuditOutline,
+  AppstoreOutline,
+} from "@ant-design/icons-angular/icons";
+
+import { routes } from "./app.routes";
+import { authInterceptor } from "./core/interceptors/auth.interceptor";
+
+const icons = [
+  DashboardOutline,
+  BankOutline,
+  TransactionOutline,
+  PieChartOutline,
+  CalendarOutline,
+  FallOutline,
+  RiseOutline,
+  TrophyOutline,
+  SettingOutline,
+  EyeOutline,
+  EyeInvisibleOutline,
+  SwapOutline,
+  PlusOutline,
+  DeleteOutline,
+  DollarOutline,
+  WalletOutline,
+  CreditCardOutline,
+  ArrowUpOutline,
+  ArrowDownOutline,
+  SafetyCertificateOutline,
+  LockOutline,
+  UserOutline,
+  LogoutOutline,
+  FilterOutline,
+  DownloadOutline,
+  CheckCircleOutline,
+  ExclamationCircleOutline,
+  MenuOutline,
+  CloseOutline,
+  AlertOutline,
+  CheckOutline,
+  TagOutline,
+  AuditOutline,
+  AppstoreOutline,
+];
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideAnimationsAsync(),
-    provideNzI18n(en_US)
-  ]
+    provideNzI18n(en_US),
+    provideNzIcons(icons),
+  ],
 };
-

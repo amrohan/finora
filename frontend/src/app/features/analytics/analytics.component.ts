@@ -9,7 +9,7 @@ import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
-import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+import { NzDropdownModule } from 'ng-zorro-antd/dropdown';
 import { AnalyticsService, NetWorthOverview, SpendingBreakdown } from '../../core/services/analytics.service';
 import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
 
@@ -26,7 +26,7 @@ import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
     NzTableModule,
     NzTagModule,
     NzSpinModule,
-    NzDropDownModule,
+    NzDropdownModule,
     InrCurrencyPipe
   ],
   template: `

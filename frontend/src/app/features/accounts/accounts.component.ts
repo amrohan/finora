@@ -11,6 +11,7 @@ import { NzInputNumberModule } from 'ng-zorro-antd/input-number';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
 import { AccountService, Account } from '../../core/services/account.service';
@@ -31,6 +32,7 @@ import { AccountService, Account } from '../../core/services/account.service';
     NzTagModule,
     NzPopconfirmModule,
     NzEmptyModule,
+    NzIconModule,
     InrCurrencyPipe
   ],
   template: `
@@ -45,8 +47,9 @@ import { AccountService, Account } from '../../core/services/account.service';
           nz-button
           nzType="primary"
           (click)="openCreateModal()"
-          class="rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 border-0 flex items-center gap-1.5 shadow-sm">
-          <span>➕ Add Account</span>
+          class="rounded-xl text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 border-0 flex items-center gap-1.5 shadow-2xs">
+          <span nz-icon nzType="plus"></span>
+          <span>Add Account</span>
         </button>
       </div>
 
@@ -87,13 +90,13 @@ import { AccountService, Account } from '../../core/services/account.service';
             <nz-card class="rounded-xl border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
               <div class="flex items-start justify-between gap-3 mb-3">
                 <div class="flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-xl shadow-xs">
-                    {{ getAccountIcon(acc.type) }}
+                  <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-700 shadow-2xs">
+                    <span nz-icon [nzType]="getAccountIcon(acc.type)" class="text-lg"></span>
                   </div>
                   <div>
                     <h3 class="font-bold text-slate-900 text-base leading-tight">{{ acc.name }}</h3>
                     <div class="flex items-center gap-1.5 mt-0.5">
-                      <nz-tag [nzColor]="getTypeColor(acc.type)" class="text-[11px] font-medium rounded">
+                      <nz-tag [nzColor]="getTypeColor(acc.type)" class="text-[11px] font-medium rounded-md">
                         {{ getTypeName(acc.type) }}
                       </nz-tag>
                       @if (acc.accountNumberMask) {
@@ -106,9 +109,15 @@ import { AccountService, Account } from '../../core/services/account.service';
                 <!-- Visibility / Privacy Badge -->
                 <div class="flex flex-col items-end gap-1">
                   @if (acc.visibility === 2 || acc.visibility === 'Private') {
-                    <nz-tag nzColor="magenta" class="text-[10px] font-medium rounded m-0">🔒 Private</nz-tag>
+                    <nz-tag nzColor="magenta" class="text-[10px] font-medium rounded-full m-0 flex items-center gap-1">
+                      <span nz-icon nzType="lock"></span>
+                      <span>Private</span>
+                    </nz-tag>
                   } @else {
-                    <nz-tag nzColor="blue" class="text-[10px] font-medium rounded m-0">👥 Shared</nz-tag>
+                    <nz-tag nzColor="blue" class="text-[10px] font-medium rounded-full m-0 flex items-center gap-1">
+                      <span nz-icon nzType="user"></span>
+                      <span>Shared</span>
+                    </nz-tag>
                   }
                 </div>
               </div>
@@ -290,13 +299,13 @@ export class AccountsComponent implements OnInit {
   getAccountIcon(type: number | string): string {
     const t = Number(type);
     switch (t) {
-      case 1: return '🏦'; // Savings
-      case 2: return '💳'; // Checking
-      case 3: return '💳'; // CreditCard
-      case 4: return '💵'; // Cash
-      case 5: return '📑'; // Loan
-      case 6: return '📈'; // Investment
-      default: return '🪙';
+      case 1: return 'bank'; // Savings
+      case 2: return 'wallet'; // Checking
+      case 3: return 'credit-card'; // CreditCard
+      case 4: return 'dollar'; // Cash
+      case 5: return 'fall'; // Loan
+      case 6: return 'rise'; // Investment
+      default: return 'bank';
     }
   }
 

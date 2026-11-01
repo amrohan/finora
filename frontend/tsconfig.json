@@ -2,6 +2,7 @@
   "compileOnSave": false,
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
+    "rootDir": "./src",
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
@@ -15,11 +16,10 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "ES2022",
-    "baseUrl": "./",
     "paths": {
-      "@core/*": ["src/app/core/*"],
-      "@shared/*": ["src/app/shared/*"],
-      "@features/*": ["src/app/features/*"]
+      "@core/*": ["./src/app/core/*"],
+      "@shared/*": ["./src/app/shared/*"],
+      "@features/*": ["./src/app/features/*"]
     }
   },
   "angularCompilerOptions": {
@@ -29,4 +29,3 @@
     "strictTemplates": true
   }
 }
-

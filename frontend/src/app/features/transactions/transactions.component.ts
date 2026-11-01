@@ -13,6 +13,7 @@ import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzPopconfirmModule } from 'ng-zorro-antd/popconfirm';
 import { NzSwitchModule } from 'ng-zorro-antd/switch';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { InrCurrencyPipe } from '../../shared/pipes/inr-currency.pipe';
 import { TransactionService, Transaction, Category } from '../../core/services/transaction.service';
@@ -37,6 +38,7 @@ import { AccountService } from '../../core/services/account.service';
     NzTagModule,
     NzPopconfirmModule,
     NzSwitchModule,
+    NzIconModule,
     InrCurrencyPipe
   ],
   template: `
@@ -47,20 +49,22 @@ import { AccountService } from '../../core/services/account.service';
           <h1 class="text-2xl font-bold tracking-tight text-slate-900">Transactions Ledger</h1>
           <p class="text-sm text-slate-500 mt-1">Audit log of all income, expenditures, splits, and account transfers</p>
         </div>
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-2">
           <button
             nz-button
             nzType="default"
             (click)="openTransferModal()"
-            class="rounded-lg text-sm font-medium border-slate-300 shadow-xs">
-            <span>🔄 Record Transfer</span>
+            class="rounded-xl text-xs sm:text-sm font-medium border-slate-200 text-slate-700 bg-white hover:bg-slate-50 shadow-2xs flex items-center gap-1.5">
+            <span nz-icon nzType="swap"></span>
+            <span>Record Transfer</span>
           </button>
           <button
             nz-button
             nzType="primary"
             (click)="openAddTxnModal()"
-            class="rounded-lg text-sm font-medium bg-emerald-600 hover:bg-emerald-500 border-0 shadow-xs">
-            <span>➕ Add Transaction</span>
+            class="rounded-xl text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 border-0 shadow-2xs flex items-center gap-1.5">
+            <span nz-icon nzType="plus"></span>
+            <span>Add Transaction</span>
           </button>
         </div>
       </div>
@@ -212,8 +216,8 @@ import { AccountService } from '../../core/services/account.service';
                     nz-popconfirm
                     nzPopconfirmTitle="Delete this transaction? The account balance will be reversed."
                     (nzOnConfirm)="deleteTransaction(txn.id)"
-                    class="text-xs p-1 text-slate-400 hover:text-rose-600">
-                    🗑️
+                    class="text-xs p-1 text-slate-400 hover:text-rose-600 flex items-center justify-center">
+                    <span nz-icon nzType="delete"></span>
                   </button>
                 </td>
               </tr>
