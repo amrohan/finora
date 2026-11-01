@@ -1,0 +1,66 @@
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment and Secret Files
+.env
+.env.*
+!.env.example
+appsettings.*.local.json
+secrets.json
+*.key
+*.pem
+*.pfx
+*.p12
+*.cert
+*.crt
+
+# Node and Angular
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.angular/
+dist/
+coverage/
+.npm/
+
+# .NET and Visual Studio / Rider
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+*.DotSettings.user
+TestResults/
+[Dd]ebug/
+[Rr]elease/
+*.trx
+*.publishsettings
+
+# Database Dumps and Local Storage
+*.dump
+*.backup
+*.sql.gz
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Caddy and Reverse Proxy Runtime
+caddy/data/
+caddy/config/
+
+# Temporary and Scratch Directories
+tmp/
+temp/
+scratch/
+
