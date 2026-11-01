@@ -1,12 +1,16 @@
-import { Pipe, PipeTransform } from '@angular/core';
+import { Pipe, PipeTransform, inject } from '@angular/core';
+import { PrivacyService } from '../../core/services/privacy.service';
 
 @Pipe({
   name: 'inrCurrency',
-  standalone: true
+  standalone: true,
+  pure: false
 })
 export class InrCurrencyPipe implements PipeTransform {
+  private readonly privacyService = inject(PrivacyService);
+
   transform(paise: number | bigint | null | undefined, isPrivate: boolean = false): string {
-    if (isPrivate) {
+    if (isPrivate || this.privacyService.isMasked()) {
       return '••••••';
     }
 
@@ -29,4 +33,3 @@ export class InrCurrencyPipe implements PipeTransform {
     return isNegative ? `-${formatted}` : formatted;
   }
 }
-

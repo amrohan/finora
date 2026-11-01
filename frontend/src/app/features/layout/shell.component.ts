@@ -11,6 +11,7 @@ import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { HouseholdService, Household } from '../../core/services/household.service';
+import { PrivacyService } from '../../core/services/privacy.service';
 
 @Component({
   selector: 'app-shell',
@@ -78,6 +79,10 @@ import { HouseholdService, Household } from '../../core/services/household.servi
           <li nz-menu-item nzMatchRouter routerLink="/goals" class="rounded-lg mx-2">
             <span class="text-base mr-3">🏆</span>
             <span>Savings Goals</span>
+          </li>
+          <li nz-menu-item nzMatchRouter routerLink="/analytics" class="rounded-lg mx-2">
+            <span class="text-base mr-3">📈</span>
+            <span>Analytics & Insights</span>
           </li>
           <li nz-menu-item nzMatchRouter routerLink="/settings" class="rounded-lg mx-2">
             <span class="text-base mr-3">⚙️</span>
@@ -153,10 +158,11 @@ import { HouseholdService, Household } from '../../core/services/household.servi
 export class ShellComponent implements OnInit {
   private authService = inject(AuthService);
   private householdService = inject(HouseholdService);
+  private privacyService = inject(PrivacyService);
   private router = inject(Router);
 
   isCollapsed = false;
-  isPrivateMode = signal(false);
+  isPrivateMode = this.privacyService.isMasked;
   currentUser = this.authService.currentUser;
   households = this.householdService.households;
   selectedHouseholdId = signal<string | null>(this.authService.activeHouseholdId());
@@ -176,7 +182,7 @@ export class ShellComponent implements OnInit {
   }
 
   togglePrivacyMode(): void {
-    this.isPrivateMode.update(val => !val);
+    this.privacyService.toggle();
   }
 
   onHouseholdChange(id: string): void {

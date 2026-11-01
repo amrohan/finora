@@ -34,6 +34,9 @@ import { BillService, BillOccurrence } from '../../core/services/bill.service';
           <p class="text-sm text-slate-500 mt-1">Overview of your family's collective and personal finances</p>
         </div>
         <div class="flex items-center gap-2">
+          <a routerLink="/analytics" nz-button nzType="default" class="rounded-lg text-sm font-medium">
+            <span>📈 Analytics</span>
+          </a>
           <a routerLink="/transactions" nz-button nzType="default" class="rounded-lg text-sm font-medium">
             <span>🔄 Record Transfer</span>
           </a>
